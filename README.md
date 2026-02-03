@@ -14,10 +14,10 @@ Feishu/Lark (飞书) channel plugin for [OpenClaw](https://github.com/openclaw/o
 openclaw plugins install @m1heng-clawd/feishu
 ```
 
-Or install via npm:
+### Upgrade
 
 ```bash
-npm install @m1heng-clawd/feishu
+openclaw plugins update feishu
 ```
 
 ### Configuration
@@ -32,7 +32,6 @@ npm install @m1heng-clawd/feishu
 
 | Permission | Scope | Description |
 |------------|-------|-------------|
-| `contact:user.base:readonly` | User info | Get basic user info (required to resolve sender display names for speaker attribution) |
 | `im:message` | Messaging | Send and receive messages |
 | `im:message.p2p_msg:readonly` | DM | Read direct messages to bot |
 | `im:message.group_at_msg:readonly` | Group | Receive @mention messages in groups |
@@ -43,23 +42,70 @@ npm install @m1heng-clawd/feishu
 
 | Permission | Scope | Description |
 |------------|-------|-------------|
+| `contact:user.base:readonly` | User info | Get basic user info (required to resolve sender display names for speaker attribution) |
 | `im:message.group_msg` | Group | Read all group messages (sensitive) |
 | `im:message:readonly` | Read | Get message history |
 | `im:message:update` | Edit | Update/edit sent messages |
 | `im:message:recall` | Recall | Recall sent messages |
 | `im:message.reactions:read` | Reactions | View message reactions |
 
-#### Document Tools Permissions
+#### Tool Permissions
 
-Required if using Feishu document tools (`feishu_doc_*`):
+**Read-only** (minimum required):
 
-| Permission | Description |
-|------------|-------------|
-| `docx:document` | Create/edit documents |
-| `docx:document:readonly` | Read documents |
-| `docx:document.block:convert` | Markdown to blocks conversion (required for write/append) |
-| `drive:drive` | Upload images to documents |
-| `drive:drive:readonly` | List folders |
+| Permission | Tool | Description |
+|------------|------|-------------|
+| `docx:document:readonly` | `feishu_doc` | Read documents |
+| `drive:drive:readonly` | `feishu_drive` | List folders, get file info |
+| `wiki:wiki:readonly` | `feishu_wiki` | List spaces, list nodes, get node info, search |
+| `bitable:app:readonly` | `feishu_bitable` | Read bitable records and fields |
+
+**Read-write** (optional, for create/edit/delete operations):
+
+| Permission | Tool | Description |
+|------------|------|-------------|
+| `docx:document` | `feishu_doc` | Create/edit documents |
+| `docx:document.block:convert` | `feishu_doc` | Markdown to blocks conversion (required for write/append) |
+| `drive:drive` | `feishu_doc`, `feishu_drive` | Upload images to documents, create folders, move/delete files |
+| `wiki:wiki` | `feishu_wiki` | Create/move/rename wiki nodes |
+| `bitable:app` | `feishu_bitable` | Create/update bitable records |
+
+#### Drive Access ⚠️
+
+> **Important:** Bots don't have their own "My Space" (root folder). Bots can only access files/folders that have been **shared with them**.
+
+To let the bot manage files:
+1. Create a folder in your Feishu Drive
+2. Right-click the folder → **Share** → search for your bot name
+3. Grant appropriate permission (view/edit)
+
+Without this step, `feishu_drive` operations like `create_folder` will fail because the bot has no root folder to create in.
+
+#### Wiki Space Access ⚠️
+
+> **Important:** API permissions alone are not enough for wiki access. You must also add the bot to each wiki space.
+
+1. Open the wiki space you want the bot to access
+2. Click **Settings** (gear icon) → **Members**
+3. Click **Add Member** → search for your bot name
+4. Select appropriate permission level (view/edit)
+
+Without this step, `feishu_wiki` will return empty results even with correct API permissions.
+
+Reference: [Wiki FAQ - How to add app to wiki](https://open.feishu.cn/document/server-docs/docs/wiki-v2/wiki-qa#a40ad4ca)
+
+#### Bitable Access ⚠️
+
+> **Important:** Like other resources, the bot can only access bitables that have been **shared with it**.
+
+To let the bot access a bitable:
+1. Open the bitable you want the bot to access
+2. Click **Share** button → search for your bot name
+3. Grant appropriate permission (view/edit)
+
+The `feishu_bitable` tools support both URL formats:
+- `/base/XXX?table=YYY` - Standard bitable URL
+- `/wiki/XXX?table=YYY` - Bitable embedded in wiki (auto-converts to app_token)
 
 #### Event Subscriptions ⚠️
 
@@ -129,7 +175,11 @@ channels:
 - User and group directory lookup
 - **Card render mode**: Optional markdown rendering with syntax highlighting
 - **Document tools**: Read, create, and write Feishu documents with markdown (tables not supported due to API limitations)
+- **Wiki tools**: Navigate knowledge bases, list spaces, get node details, search, create/move/rename nodes
+- **Drive tools**: List folders, get file info, create folders, move/delete files
+- **Bitable tools**: Read/write bitable (多维表格) records, supports both `/base/` and `/wiki/` URLs
 - **@mention forwarding**: When you @mention someone in your message, the bot's reply will automatically @mention them too
+- **Permission error notification**: When the bot encounters a Feishu API permission error, it automatically notifies the user with the permission grant URL
 
 #### @Mention Forwarding
 
@@ -190,10 +240,10 @@ openclaw plugins install ./feishu-0.1.3.tgz
 openclaw plugins install @m1heng-clawd/feishu
 ```
 
-或通过 npm 安装：
+### 升级
 
 ```bash
-npm install @m1heng-clawd/feishu
+openclaw plugins update feishu
 ```
 
 ### 配置
@@ -208,7 +258,6 @@ npm install @m1heng-clawd/feishu
 
 | 权限 | 范围 | 说明 |
 |------|------|------|
-| `contact:user.base:readonly` | 用户信息 | 获取用户基本信息（用于解析发送者姓名，避免群聊/私聊把不同人当成同一说话者） |
 | `im:message` | 消息 | 发送和接收消息 |
 | `im:message.p2p_msg:readonly` | 私聊 | 读取发给机器人的私聊消息 |
 | `im:message.group_at_msg:readonly` | 群聊 | 接收群内 @机器人 的消息 |
@@ -219,23 +268,70 @@ npm install @m1heng-clawd/feishu
 
 | 权限 | 范围 | 说明 |
 |------|------|------|
+| `contact:user.base:readonly` | 用户信息 | 获取用户基本信息（用于解析发送者姓名，避免群聊/私聊把不同人当成同一说话者） |
 | `im:message.group_msg` | 群聊 | 读取所有群消息（敏感） |
 | `im:message:readonly` | 读取 | 获取历史消息 |
 | `im:message:update` | 编辑 | 更新/编辑已发送消息 |
 | `im:message:recall` | 撤回 | 撤回已发送消息 |
 | `im:message.reactions:read` | 表情 | 查看消息表情回复 |
 
-#### 文档工具权限
+#### 工具权限
 
-使用飞书文档工具（`feishu_doc_*`）需要以下权限：
+**只读权限**（最低要求）：
 
-| 权限 | 说明 |
-|------|------|
-| `docx:document` | 创建/编辑文档 |
-| `docx:document:readonly` | 读取文档 |
-| `docx:document.block:convert` | Markdown 转 blocks（write/append 必需） |
-| `drive:drive` | 上传图片到文档 |
-| `drive:drive:readonly` | 列出文件夹 |
+| 权限 | 工具 | 说明 |
+|------|------|------|
+| `docx:document:readonly` | `feishu_doc` | 读取文档 |
+| `drive:drive:readonly` | `feishu_drive` | 列出文件夹、获取文件信息 |
+| `wiki:wiki:readonly` | `feishu_wiki` | 列出空间、列出节点、获取节点详情、搜索 |
+| `bitable:app:readonly` | `feishu_bitable` | 读取多维表格记录和字段 |
+
+**读写权限**（可选，用于创建/编辑/删除操作）：
+
+| 权限 | 工具 | 说明 |
+|------|------|------|
+| `docx:document` | `feishu_doc` | 创建/编辑文档 |
+| `docx:document.block:convert` | `feishu_doc` | Markdown 转 blocks（write/append 必需） |
+| `drive:drive` | `feishu_doc`, `feishu_drive` | 上传图片到文档、创建文件夹、移动/删除文件 |
+| `wiki:wiki` | `feishu_wiki` | 创建/移动/重命名知识库节点 |
+| `bitable:app` | `feishu_bitable` | 创建/更新多维表格记录 |
+
+#### 云空间访问权限 ⚠️
+
+> **重要：** 机器人没有自己的"我的空间"（根目录）。机器人只能访问**被分享给它的文件/文件夹**。
+
+要让机器人管理文件：
+1. 在你的飞书云空间创建一个文件夹
+2. 右键文件夹 → **分享** → 搜索机器人名称
+3. 授予相应权限（查看/编辑）
+
+如果不做这一步，`feishu_drive` 的 `create_folder` 等操作会失败，因为机器人没有根目录可以创建文件夹。
+
+#### 知识库空间权限 ⚠️
+
+> **重要：** 仅有 API 权限不够，还需要将机器人添加到知识库空间。
+
+1. 打开需要机器人访问的知识库空间
+2. 点击 **设置**（齿轮图标）→ **成员管理**
+3. 点击 **添加成员** → 搜索机器人名称
+4. 选择权限级别（查看/编辑）
+
+如果不做这一步，即使 API 权限正确，`feishu_wiki` 也会返回空结果。
+
+参考文档：[知识库常见问题 - 如何将应用添加为知识库成员](https://open.feishu.cn/document/server-docs/docs/wiki-v2/wiki-qa#a40ad4ca)
+
+#### 多维表格访问权限 ⚠️
+
+> **重要：** 与其他资源一样，机器人只能访问**被分享给它的多维表格**。
+
+要让机器人访问多维表格：
+1. 打开需要机器人访问的多维表格
+2. 点击 **分享** 按钮 → 搜索机器人名称
+3. 授予相应权限（查看/编辑）
+
+`feishu_bitable` 工具支持两种 URL 格式：
+- `/base/XXX?table=YYY` - 标准多维表格链接
+- `/wiki/XXX?table=YYY` - 嵌入在知识库中的多维表格（自动转换为 app_token）
 
 #### 事件订阅 ⚠️
 
@@ -305,7 +401,11 @@ channels:
 - 用户和群组目录查询
 - **卡片渲染模式**：支持语法高亮的 Markdown 渲染
 - **文档工具**：读取、创建、用 Markdown 写入飞书文档（表格因 API 限制不支持）
+- **知识库工具**：浏览知识库、列出空间、获取节点详情、搜索、创建/移动/重命名节点
+- **云空间工具**：列出文件夹、获取文件信息、创建文件夹、移动/删除文件
+- **多维表格工具**：读写多维表格记录，支持 `/base/` 和 `/wiki/` 两种链接格式
 - **@ 转发功能**：在消息中 @ 某人，机器人的回复会自动 @ 该用户
+- **权限错误提示**：当机器人遇到飞书 API 权限错误时，会自动通知用户并提供权限授权链接
 
 #### @ 转发功能
 
